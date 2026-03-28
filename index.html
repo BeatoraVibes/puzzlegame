@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Wheel Game</title>
+<title>Wheel Game Final</title>
 
 <style>
 body{
@@ -12,26 +12,27 @@ body{
     color:white;
 }
 
-/* SCREENS */
-.screen{display:none;}
-.screen.active{display:block;}
-
-/* ENTRY */
+/* ENTRY SCREEN */
 #entry{
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    min-height:100vh;
+    height:100vh;
 }
-#entry input,#entry select{
+
+input,select{
     width:260px;
     padding:10px;
     margin:5px;
     text-align:center;
 }
 
-/* GAME LAYOUT */
+/* GAME SCREEN */
+#game{
+    display:none;
+}
+
 .game{
     display:flex;
     flex-wrap:wrap;
@@ -60,20 +61,16 @@ body{
 .right{display:flex;flex-direction:column;align-items:center;gap:8px;}
 
 /* WHEEL */
-.wheel-container{
-    position:relative;
-    width:200px;height:200px;
-}
+.wheel-container{position:relative;}
 canvas{border-radius:50%;}
 .pointer{
     position:absolute;
     top:-10px;left:50%;
     transform:translateX(-50%);
-    font-size:20px;
 }
 
 /* BUTTONS */
-.controls{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;}
+.controls{display:flex;flex-wrap:wrap;gap:5px;}
 button{padding:8px 12px;cursor:pointer;}
 
 /* KEYBOARD */
@@ -86,9 +83,9 @@ button{padding:8px 12px;cursor:pointer;}
 .keyboard button{height:40px;}
 
 /* SCORE */
-.scoreboard{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;}
+.scoreboard{display:flex;gap:5px;flex-wrap:wrap;}
 .player{padding:5px;border:2px solid white;}
-.active-player{border:2px solid gold;box-shadow:0 0 10px gold;}
+.active-player{border:2px solid gold;}
 
 </style>
 </head>
@@ -96,7 +93,7 @@ button{padding:8px 12px;cursor:pointer;}
 <body>
 
 <!-- ENTRY -->
-<div id="entry" class="screen active">
+<div id="entry">
 <h3>Select Players</h3>
 <select id="playerCount">
 <option value="1">1</option>
@@ -105,9 +102,9 @@ button{padding:8px 12px;cursor:pointer;}
 </select>
 
 <h3>Player Names</h3>
-<input id="n1" placeholder="Player 1">
-<input id="n2" placeholder="Player 2">
-<input id="n3" placeholder="Player 3">
+<input id="n1">
+<input id="n2">
+<input id="n3">
 
 <h3>Puzzles</h3>
 <input id="p1">
@@ -119,7 +116,8 @@ button{padding:8px 12px;cursor:pointer;}
 </div>
 
 <!-- GAME -->
-<div id="game" class="screen">
+<div id="game">
+
 <div class="game">
 
 <div class="board">
@@ -150,25 +148,32 @@ button{padding:8px 12px;cursor:pointer;}
 </div>
 
 <div id="keyboard" class="keyboard"></div>
+
 </div>
 
 <script>
 
-/* DATA */
 let puzzles=[],currentRound=0;
 let currentPuzzle="",revealed=[];
 let players=[],playerNames=[];
 let currentPlayer=0,totalPlayers=3;
 let spinValue=0;
 
-/* WHEEL */
-const segments=["10000","35000","50000","75000","100000","SNAKE","LOSE"];
-const colors=["gold","orange","yellow","red","green","cyan","purple"];
-let angle=0;
+/* UPDATED WHEEL SEGMENTS */
+const segments=[
+"10000","35000","50000","75000","100000",
+"SNAKE","LOSE TURN"
+];
 
+const colors=[
+"gold","orange","yellow","red","green","cyan","purple"
+];
+
+let angle=0;
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 
+/* DRAW */
 function drawWheel(){
     let arc=2*Math.PI/segments.length;
     segments.forEach((seg,i)=>{
@@ -182,7 +187,7 @@ function drawWheel(){
         ctx.translate(100,100);
         ctx.rotate(arc*i+arc/2+angle);
         ctx.fillStyle="black";
-        ctx.font="12px Arial";
+        ctx.font="11px Arial";
         ctx.fillText(seg,40,0);
         ctx.restore();
     });
@@ -205,20 +210,21 @@ function spin(){
         drawWheel();
 
         if(progress<duration) requestAnimationFrame(animate);
-        else getResult();
+        else resultCalc();
     }
+
     requestAnimationFrame(animate);
 }
 
 /* RESULT */
-function getResult(){
+function resultCalc(){
     let deg=(angle*180/Math.PI)%360;
     let index=Math.floor((360-deg)/(360/segments.length))%segments.length;
     let res=segments[index];
 
     result.innerText="Result: "+res;
 
-    if(res==="LOSE") nextPlayer();
+    if(res==="LOSE TURN") nextPlayer();
     else if(res==="SNAKE"){players[currentPlayer]=0;nextPlayer();}
     else spinValue=parseInt(res);
 
@@ -227,6 +233,7 @@ function getResult(){
 
 /* START */
 function startGame(){
+
     totalPlayers=parseInt(playerCount.value);
 
     playerNames=[
@@ -239,11 +246,23 @@ function startGame(){
 
     puzzles=[p1.value,p2.value,p3.value,p4.value].map(p=>p.toUpperCase());
 
-    entry.classList.remove("active");
-    game.classList.add("active");
+    document.getElementById("entry").style.display="none";
+    document.getElementById("game").style.display="block";
 
     drawWheel();
     loadRound();
+}
+
+/* RESTART */
+function restart(){
+    document.getElementById("game").style.display="none";
+    document.getElementById("entry").style.display="flex";
+}
+
+function loadRound(){
+    currentPuzzle=puzzles[currentRound];
+    revealed=new Array(currentPuzzle.length).fill(false);
+    renderGrid();renderKeyboard();updateScore();
 }
 
 /* GRID */
@@ -257,17 +276,22 @@ function renderGrid(){
     });
     if(row) drawRow(row);
 }
+
 function drawRow(text){
     let r=document.createElement("div");r.className="row";
     let start=0;
     text.split("").forEach(c=>{
         let cell=document.createElement("div");
         cell.className="cell";
+
         if(c===" ") cell.style.visibility="hidden";
         else{
             let i=currentPuzzle.indexOf(c,start);
             start=i+1;
-            if(revealed[i]){cell.classList.add("revealed");cell.innerText=c;}
+            if(revealed[i]){
+                cell.classList.add("revealed");
+                cell.innerText=c;
+            }
         }
         r.appendChild(cell);
     });
@@ -286,7 +310,7 @@ function renderKeyboard(){
     }
 }
 
-/* GAME LOGIC */
+/* GAME */
 function guess(l,b){
     b.disabled=true;
     let found=false;
@@ -296,6 +320,7 @@ function guess(l,b){
     if(!found) nextPlayer();
     renderGrid();updateScore();
 }
+
 function buyVowel(){
     let v=prompt("Enter vowel").toUpperCase();
     if(!"AEIOU".includes(v)) return;
@@ -303,6 +328,7 @@ function buyVowel(){
     currentPuzzle.split("").forEach((c,i)=>{if(c===v) revealed[i]=true;});
     renderGrid();updateScore();
 }
+
 function solve(){revealed.fill(true);renderGrid();}
 
 function nextPlayer(){currentPlayer=(currentPlayer+1)%totalPlayers;}
@@ -318,22 +344,10 @@ function updateScore(){
     }
 }
 
-function loadRound(){
-    currentPuzzle=puzzles[currentRound];
-    revealed=new Array(currentPuzzle.length).fill(false);
-    renderGrid();renderKeyboard();updateScore();
-}
-
 function nextRound(){
     currentRound++;
     if(currentRound>=4){alert("Game Over");return;}
     loadRound();
-}
-
-/* RESTART (back to entry) */
-function restart(){
-    game.classList.remove("active");
-    entry.classList.add("active");
 }
 
 </script>
