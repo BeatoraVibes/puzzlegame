@@ -19,7 +19,7 @@ body{
 /* ENTRY */
 #entry{
     text-align:center;
-    margin-top:50px;
+    padding:20px;
 }
 input,select{
     padding:10px;
@@ -30,19 +30,21 @@ input,select{
 /* GAME LAYOUT */
 .game{
     display:flex;
-    justify-content:space-between;
-    padding:20px;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:20px;
 }
 
 /* BOARD */
 .board{
     background:#0b5d3b;
-    padding:20px;
+    padding:15px;
     border-radius:15px;
-    box-shadow:0 0 25px gold;
-    width:60%;
+    box-shadow:0 0 20px gold;
+    max-width:95%;
 }
 
+/* GRID */
 .grid{
     display:flex;
     flex-direction:column;
@@ -52,19 +54,16 @@ input,select{
 .row{
     display:flex;
     justify-content:center;
-    margin:5px;
 }
 
 .cell{
-    width:45px;
-    height:45px;
-    margin:3px;
+    width:35px;
+    height:35px;
+    margin:2px;
     background:#083c28;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:20px;
-    border-radius:5px;
 }
 
 .revealed{
@@ -74,39 +73,41 @@ input,select{
 
 /* RIGHT PANEL */
 .right{
-    width:35%;
     text-align:center;
 }
 
-/* BUTTON */
-button{
-    padding:10px;
-    margin:5px;
-    cursor:pointer;
+/* WHEEL */
+.wheel{
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    background:conic-gradient(gold,orange,yellow,red,green,cyan,purple);
+    margin:auto;
 }
 
 /* KEYBOARD */
 .keyboard{
     display:grid;
-    grid-template-columns: repeat(8, 60px);
+    grid-template-columns: repeat(8, 45px);
     justify-content:center;
-    gap:10px;
-    margin-top:20px;
+    gap:5px;
+    margin-top:10px;
 }
 
 .keyboard button{
-    height:55px;
+    height:40px;
 }
 
 /* SCORE */
 .scoreboard{
     display:flex;
+    gap:5px;
     justify-content:center;
-    gap:10px;
+    flex-wrap:wrap;
 }
 
 .player{
-    padding:10px;
+    padding:5px;
     border:2px solid white;
 }
 
@@ -122,25 +123,25 @@ button{
 <!-- ENTRY -->
 <div id="entry" class="screen active">
 
-<h2>Select Players</h2>
+<h3>Select Players</h3>
 <select id="playerCount">
-    <option value="1">1 Player</option>
-    <option value="2">2 Players</option>
-    <option value="3" selected>3 Players</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3" selected>3</option>
 </select>
 
-<h2>Enter Player Names</h2>
+<h3>Player Names</h3>
 <input id="n1" placeholder="Player 1"><br>
 <input id="n2" placeholder="Player 2"><br>
 <input id="n3" placeholder="Player 3"><br>
 
-<h2>Enter All 4 Puzzles</h2>
+<h3>Puzzles</h3>
 <input id="p1"><br>
 <input id="p2"><br>
 <input id="p3"><br>
 <input id="p4"><br>
 
-<button onclick="startGame()">Start Game</button>
+<button onclick="startGame()">Start</button>
 
 </div>
 
@@ -155,14 +156,17 @@ button{
 
 <div class="right">
 
-    <h3 id="result"></h3>
+<div class="wheel"></div>
 
-    <button onclick="spin()">Spin</button>
-    <button onclick="buyVowel()">Vowel ₹10000</button>
-    <button onclick="solve()">Solve</button>
-    <button onclick="nextRound()">Next Round</button>
+<h3 id="result"></h3>
 
-    <div id="scoreboard" class="scoreboard"></div>
+<button onclick="spin()">Spin</button>
+<button onclick="buyVowel()">Vowel ₹10000</button>
+<button onclick="solve()">Solve</button>
+<button onclick="nextRound()">Next</button>
+<button onclick="restartGame()">Restart</button>
+
+<div id="scoreboard" class="scoreboard"></div>
 
 </div>
 
@@ -182,12 +186,16 @@ let spinValue=0;
 
 const values=[10000,35000,50000,75000,100000,"SNAKE","LOSE"];
 
-/* PLAYER SELECT */
-playerCount.addEventListener("change",function(){
-    let c=parseInt(this.value);
-    n2.style.display = c>=2 ? "block":"none";
-    n3.style.display = c===3 ? "block":"none";
-});
+/* FIX PLAYER SELECT */
+playerCount.addEventListener("change",updatePlayerInputs);
+
+function updatePlayerInputs(){
+    let c=parseInt(playerCount.value);
+
+    n1.style.display="block";
+    n2.style.display=c>=2?"block":"none";
+    n3.style.display=c===3?"block":"none";
+}
 
 /* START */
 function startGame(){
@@ -201,6 +209,7 @@ function startGame(){
     ].slice(0,totalPlayers);
 
     players=new Array(totalPlayers).fill(0);
+    currentPlayer=0;
 
     puzzles=[
         p1.value.toUpperCase(),
@@ -224,7 +233,7 @@ function loadRound(){
     updateScore();
 }
 
-/* GRID */
+/* GRID FIX */
 function renderGrid(){
     grid.innerHTML="";
 
@@ -247,16 +256,22 @@ function drawRow(text){
     let rowDiv=document.createElement("div");
     rowDiv.className="row";
 
+    let startIndex=0;
+
     text.split("").forEach((char,i)=>{
         let cell=document.createElement("div");
         cell.className="cell";
 
-        let index=currentPuzzle.indexOf(char);
+        if(char===" "){
+            cell.style.visibility="hidden";
+        } else {
+            let index=currentPuzzle.indexOf(char,startIndex);
+            startIndex=index+1;
 
-        if(char===" ") cell.style.visibility="hidden";
-        else if(revealed[index]){
-            cell.classList.add("revealed");
-            cell.innerText=char;
+            if(revealed[index]){
+                cell.classList.add("revealed");
+                cell.innerText=char;
+            }
         }
 
         rowDiv.appendChild(cell);
@@ -354,12 +369,22 @@ function updateScore(){
 /* ROUND */
 function nextRound(){
     currentRound++;
+
     if(currentRound>=4){
         alert("Game Over");
         return;
     }
+
     loadRound();
 }
+
+/* RESTART */
+function restartGame(){
+    location.reload();
+}
+
+/* INIT */
+updatePlayerInputs();
 
 </script>
 
