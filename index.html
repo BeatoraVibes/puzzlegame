@@ -18,21 +18,27 @@ body{
 
 /* ENTRY */
 #entry{
-    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
     padding:20px;
 }
-input,select{
+
+#entry input,#entry select{
+    width:280px;
     padding:10px;
     margin:5px;
-    width:250px;
+    text-align:center;
 }
 
-/* GAME LAYOUT */
+/* GAME */
 .game{
     display:flex;
     flex-wrap:wrap;
     justify-content:center;
     gap:20px;
+    padding:20px;
 }
 
 /* BOARD */
@@ -44,7 +50,6 @@ input,select{
     max-width:95%;
 }
 
-/* GRID */
 .grid{
     display:flex;
     flex-direction:column;
@@ -73,16 +78,34 @@ input,select{
 
 /* RIGHT PANEL */
 .right{
-    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
 }
 
 /* WHEEL */
 .wheel{
-    width:120px;
-    height:120px;
+    width:180px;
+    height:180px;
     border-radius:50%;
-    background:conic-gradient(gold,orange,yellow,red,green,cyan,purple);
-    margin:auto;
+    background: conic-gradient(
+        gold,orange,yellow,red,green,cyan,purple,gold
+    );
+    box-shadow:0 0 15px gold;
+}
+
+/* BUTTONS */
+.controls{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:5px;
+}
+
+button{
+    padding:8px 12px;
+    cursor:pointer;
 }
 
 /* KEYBOARD */
@@ -102,8 +125,8 @@ input,select{
 .scoreboard{
     display:flex;
     gap:5px;
-    justify-content:center;
     flex-wrap:wrap;
+    justify-content:center;
 }
 
 .player{
@@ -113,6 +136,7 @@ input,select{
 
 .active-player{
     border:2px solid gold;
+    box-shadow:0 0 10px gold;
 }
 
 </style>
@@ -131,17 +155,17 @@ input,select{
 </select>
 
 <h3>Player Names</h3>
-<input id="n1" placeholder="Player 1"><br>
-<input id="n2" placeholder="Player 2"><br>
-<input id="n3" placeholder="Player 3"><br>
+<input id="n1" placeholder="Player 1">
+<input id="n2" placeholder="Player 2">
+<input id="n3" placeholder="Player 3">
 
 <h3>Puzzles</h3>
-<input id="p1"><br>
-<input id="p2"><br>
-<input id="p3"><br>
-<input id="p4"><br>
+<input id="p1">
+<input id="p2">
+<input id="p3">
+<input id="p4">
 
-<button onclick="startGame()">Start</button>
+<button onclick="startGame()">Start Game</button>
 
 </div>
 
@@ -160,11 +184,13 @@ input,select{
 
 <h3 id="result"></h3>
 
-<button onclick="spin()">Spin</button>
-<button onclick="buyVowel()">Vowel ₹10000</button>
-<button onclick="solve()">Solve</button>
-<button onclick="nextRound()">Next</button>
-<button onclick="restartGame()">Restart</button>
+<div class="controls">
+    <button onclick="spin()">Spin</button>
+    <button onclick="buyVowel()">Vowel ₹10000</button>
+    <button onclick="solve()">Solve</button>
+    <button onclick="nextRound()">Next</button>
+    <button onclick="restartGame()">Restart</button>
+</div>
 
 <div id="scoreboard" class="scoreboard"></div>
 
@@ -186,16 +212,12 @@ let spinValue=0;
 
 const values=[10000,35000,50000,75000,100000,"SNAKE","LOSE"];
 
-/* FIX PLAYER SELECT */
-playerCount.addEventListener("change",updatePlayerInputs);
-
-function updatePlayerInputs(){
+/* PLAYER INPUT FIX */
+playerCount.addEventListener("change",()=>{
     let c=parseInt(playerCount.value);
-
-    n1.style.display="block";
     n2.style.display=c>=2?"block":"none";
     n3.style.display=c===3?"block":"none";
-}
+});
 
 /* START */
 function startGame(){
@@ -233,7 +255,7 @@ function loadRound(){
     updateScore();
 }
 
-/* GRID FIX */
+/* GRID */
 function renderGrid(){
     grid.innerHTML="";
 
@@ -258,7 +280,7 @@ function drawRow(text){
 
     let startIndex=0;
 
-    text.split("").forEach((char,i)=>{
+    text.split("").forEach((char)=>{
         let cell=document.createElement("div");
         cell.className="cell";
 
@@ -352,14 +374,10 @@ function nextPlayer(){
 /* SCORE */
 function updateScore(){
     scoreboard.innerHTML="";
-
     for(let i=0;i<totalPlayers;i++){
         let d=document.createElement("div");
         d.className="player";
-
-        if(i===currentPlayer){
-            d.classList.add("active-player");
-        }
+        if(i===currentPlayer) d.classList.add("active-player");
 
         d.innerHTML=`<strong>${playerNames[i]}</strong><br>₹${players[i]}`;
         scoreboard.appendChild(d);
@@ -369,12 +387,10 @@ function updateScore(){
 /* ROUND */
 function nextRound(){
     currentRound++;
-
     if(currentRound>=4){
         alert("Game Over");
         return;
     }
-
     loadRound();
 }
 
@@ -382,9 +398,6 @@ function nextRound(){
 function restartGame(){
     location.reload();
 }
-
-/* INIT */
-updatePlayerInputs();
 
 </script>
 
