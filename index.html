@@ -2,92 +2,77 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Wheel Game Elite</title>
+<title>Wheel Game Premium</title>
 
 <style>
 body {
     margin:0;
     font-family: Arial;
-    background: radial-gradient(circle, #1a0033, #000);
+    background: radial-gradient(circle, #12002b, #000);
     color:white;
 }
 
-/* SCREEN */
-.screen { display:none; }
-.active { display:block; text-align:center; }
-
-/* ENTRY */
-input {
-    padding:10px;
-    margin:5px;
-    width:250px;
-}
-
-/* GAME LAYOUT */
+/* LAYOUT */
 .game {
     display:flex;
     justify-content:space-around;
-    padding:20px;
+    padding:15px;
+    flex-wrap:wrap;
 }
 
-/* PUZZLE BOARD */
+/* PUZZLE */
 .puzzle-board {
     background:#0b5d3b;
-    padding:20px;
-    border-radius:15px;
-    box-shadow:0 0 20px gold;
+    padding:15px;
+    border-radius:12px;
+    box-shadow:0 0 25px gold;
 }
 
 .grid {
     display:grid;
-    grid-template-columns: repeat(12, 45px);
-    gap:8px;
+    grid-template-columns: repeat(12, 40px);
+    gap:6px;
+    justify-content:center;
 }
 
 .cell {
-    width:45px;
-    height:45px;
-    background:white;
-    color:black;
+    width:40px;
+    height:40px;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:20px;
+    font-size:18px;
+    background:#083c28;
 }
 
-.hidden {
-    background:#ddd;
+.revealed {
+    background:white;
+    color:black;
 }
 
 /* WHEEL */
-.wheel {
+.wheel-container {
+    position:relative;
     width:220px;
     height:220px;
-    border-radius:50%;
-    background: conic-gradient(
-        gold 0deg 30deg,
-        orange 30deg 60deg,
-        yellow 60deg 90deg,
-        red 90deg 120deg,
-        green 120deg 150deg,
-        cyan 150deg 180deg,
-        gold 180deg 210deg,
-        orange 210deg 240deg,
-        yellow 240deg 270deg,
-        red 270deg 300deg,
-        green 300deg 330deg,
-        cyan 330deg 360deg
-    );
-    display:flex;
-    align-items:center;
-    justify-content:center;
     margin:auto;
-    font-weight:bold;
+}
+
+canvas {
+    border-radius:50%;
+}
+
+.pointer {
+    position:absolute;
+    top:-10px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:25px;
 }
 
 /* BUTTONS */
 button {
-    padding:10px;
+    padding:8px 12px;
     margin:5px;
     cursor:pointer;
 }
@@ -95,10 +80,10 @@ button {
 /* KEYBOARD */
 .keyboard {
     display:grid;
-    grid-template-columns: repeat(8, 1fr);
-    max-width:400px;
-    margin:20px auto;
+    grid-template-columns: repeat(8, 40px);
+    justify-content:center;
     gap:5px;
+    margin-top:10px;
 }
 
 .keyboard button {
@@ -114,11 +99,11 @@ button {
 .scoreboard {
     display:flex;
     justify-content:center;
-    gap:15px;
+    gap:10px;
 }
 
 .player {
-    padding:10px 20px;
+    padding:8px 12px;
     border:2px solid white;
 }
 
@@ -131,19 +116,6 @@ button {
 
 <body>
 
-<!-- ENTRY -->
-<div id="entryScreen" class="screen active">
-    <h1>Enter Puzzles</h1>
-    <input id="p1"><br>
-    <input id="p2"><br>
-    <input id="p3"><br>
-    <input id="p4"><br>
-    <button onclick="startGame()">Start</button>
-</div>
-
-<!-- GAME -->
-<div id="gameScreen" class="screen">
-
 <div class="game">
 
     <!-- PUZZLE -->
@@ -153,43 +125,112 @@ button {
 
     <!-- RIGHT -->
     <div>
-        <div class="wheel">🎡</div>
+
+        <div class="wheel-container">
+            <div class="pointer">▲</div>
+            <canvas id="wheelCanvas" width="220" height="220"></canvas>
+        </div>
+
+        <h3 id="wheelResult"></h3>
 
         <button onclick="spinWheel()">Spin</button>
-        <button onclick="buyVowel()">Buy Vowel ₹10000</button>
+        <button onclick="buyVowel()">Vowel ₹10000</button>
         <button onclick="solvePuzzle()">Solve</button>
-
-        <h2 id="wheelResult"></h2>
+        <button onclick="nextRound()">Next Round</button>
 
         <div class="scoreboard" id="scoreboard"></div>
+
     </div>
 
 </div>
 
 <div class="keyboard" id="keyboard"></div>
 
-</div>
-
 <script>
 
-let puzzles=[], currentRound=0;
-let players=[0,0,0];
-let currentPlayer=0;
-let currentPuzzle="", revealed=[];
+/* DATA */
+let puzzles=["HELLO WORLD","INDIA IS GREAT","GAME DEVELOPMENT","FINAL ROUND"];
+let currentRound=0, currentPuzzle="", revealed=[];
+let players=[0,0,0], currentPlayer=0;
 let spinValue=0;
 
-const wheelValues=[
-    10000,35000,50000,75000,100000,
-    "SNAKE","LOSE"
+/* WHEEL */
+const segments=[
+    "10000","35000","50000","75000","100000","SNAKE","LOSE"
 ];
 
-function startGame(){
-    puzzles=[p1.value.toUpperCase(),p2.value.toUpperCase(),p3.value.toUpperCase(),p4.value.toUpperCase()];
-    entryScreen.classList.remove("active");
-    gameScreen.classList.add("active");
-    loadRound();
+const colors=["gold","orange","yellow","red","green","cyan","purple"];
+
+let angle=0;
+
+/* DRAW WHEEL */
+const canvas=document.getElementById("wheelCanvas");
+const ctx=canvas.getContext("2d");
+
+function drawWheel(){
+    let arc=2*Math.PI/segments.length;
+
+    segments.forEach((seg,i)=>{
+        ctx.beginPath();
+        ctx.fillStyle=colors[i];
+        ctx.moveTo(110,110);
+        ctx.arc(110,110,100,arc*i+angle,arc*(i+1)+angle);
+        ctx.fill();
+
+        ctx.fillStyle="black";
+        ctx.font="12px Arial";
+        ctx.save();
+        ctx.translate(110,110);
+        ctx.rotate(arc*i+arc/2+angle);
+        ctx.fillText(seg,50,0);
+        ctx.restore();
+    });
 }
 
+/* SPIN */
+function spinWheel(){
+    let spin=Math.random()*2000+2000;
+    let start=angle;
+
+    let duration=2000;
+    let startTime=null;
+
+    function animate(t){
+        if(!startTime) startTime=t;
+        let progress=t-startTime;
+
+        let ease=1-Math.pow(1-progress/duration,3);
+        angle=start+(spin*ease*Math.PI/180);
+
+        ctx.clearRect(0,0,220,220);
+        drawWheel();
+
+        if(progress<duration){
+            requestAnimationFrame(animate);
+        } else {
+            calculateResult();
+        }
+    }
+
+    requestAnimationFrame(animate);
+}
+
+/* RESULT */
+function calculateResult(){
+    let deg=(angle*180/Math.PI)%360;
+    let segmentIndex=Math.floor((360-deg)/(360/segments.length))%segments.length;
+    let result=segments[segmentIndex];
+
+    wheelResult.innerText="Result: "+result;
+
+    if(result==="LOSE") nextPlayer();
+    else if(result==="SNAKE"){ players[currentPlayer]=0; nextPlayer(); }
+    else spinValue=parseInt(result);
+
+    updateScore();
+}
+
+/* GAME */
 function loadRound(){
     currentPuzzle=puzzles[currentRound];
     revealed=Array(currentPuzzle.length).fill(false);
@@ -205,8 +246,10 @@ function renderGrid(){
         d.className="cell";
 
         if(c===" ") d.innerText="";
-        else if(revealed[i]) d.innerText=c;
-        else d.classList.add("hidden");
+        else if(revealed[i]){
+            d.classList.add("revealed");
+            d.innerText=c;
+        }
 
         grid.appendChild(d);
     });
@@ -221,17 +264,6 @@ function renderKeyboard(){
         btn.onclick=()=>guess(l,btn);
         keyboard.appendChild(btn);
     }
-}
-
-function spinWheel(){
-    let val=wheelValues[Math.floor(Math.random()*wheelValues.length)];
-    wheelResult.innerText=val;
-
-    if(val==="LOSE") nextPlayer();
-    else if(val==="SNAKE"){ players[currentPlayer]=0; nextPlayer(); }
-    else spinValue=val;
-
-    updateScore();
 }
 
 function guess(l,btn){
@@ -269,7 +301,6 @@ function buyVowel(){
 function solvePuzzle(){
     revealed=Array(currentPuzzle.length).fill(true);
     renderGrid();
-    alert("Solved!");
     nextRound();
 }
 
@@ -289,19 +320,17 @@ function updateScore(){
 }
 
 function nextRound(){
-    if(currentRound===2){
-        let max=Math.max(...players);
-        currentPlayer=players.indexOf(max);
-    }
-
     currentRound++;
     if(currentRound>=4){
         alert("Game Over");
         return;
     }
-
     loadRound();
 }
+
+/* INIT */
+drawWheel();
+loadRound();
 
 </script>
 
