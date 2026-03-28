@@ -2,48 +2,39 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Wheel Game Pro+</title>
+<title>Wheel Game Elite</title>
 
 <style>
 body {
-    margin: 0;
+    margin:0;
     font-family: Arial;
     background: radial-gradient(circle, #1a0033, #000);
-    color: white;
+    color:white;
 }
 
-/* SCREENS */
+/* SCREEN */
 .screen { display:none; }
-.active { display:block; }
+.active { display:block; text-align:center; }
 
 /* ENTRY */
-#entryScreen {
-    text-align:center;
-    margin-top:100px;
-}
-
 input {
     padding:10px;
     margin:5px;
     width:250px;
 }
 
-button {
-    cursor:pointer;
-}
-
 /* GAME LAYOUT */
 .game {
     display:flex;
-    justify-content:space-between;
+    justify-content:space-around;
     padding:20px;
 }
 
-/* LEFT PUZZLE */
-.puzzle-box {
-    border:4px solid gold;
-    border-radius:15px;
+/* PUZZLE BOARD */
+.puzzle-board {
+    background:#0b5d3b;
     padding:20px;
+    border-radius:15px;
     box-shadow:0 0 20px gold;
 }
 
@@ -56,7 +47,8 @@ button {
 .cell {
     width:45px;
     height:45px;
-    background:#003333;
+    background:white;
+    color:black;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -64,12 +56,7 @@ button {
 }
 
 .hidden {
-    background:#002222;
-}
-
-/* RIGHT PANEL */
-.right {
-    text-align:center;
+    background:#ddd;
 }
 
 /* WHEEL */
@@ -78,34 +65,44 @@ button {
     height:220px;
     border-radius:50%;
     background: conic-gradient(
-        gold 0deg 60deg,
-        orange 60deg 120deg,
-        yellow 120deg 180deg,
-        red 180deg 240deg,
-        green 240deg 300deg,
-        cyan 300deg 360deg
+        gold 0deg 30deg,
+        orange 30deg 60deg,
+        yellow 60deg 90deg,
+        red 90deg 120deg,
+        green 120deg 150deg,
+        cyan 150deg 180deg,
+        gold 180deg 210deg,
+        orange 210deg 240deg,
+        yellow 240deg 270deg,
+        red 270deg 300deg,
+        green 300deg 330deg,
+        cyan 330deg 360deg
     );
-    margin:auto;
     display:flex;
     align-items:center;
     justify-content:center;
+    margin:auto;
     font-weight:bold;
 }
 
-.controls button {
-    margin:5px;
+/* BUTTONS */
+button {
     padding:10px;
+    margin:5px;
+    cursor:pointer;
 }
 
 /* KEYBOARD */
 .keyboard {
-    margin-top:20px;
+    display:grid;
+    grid-template-columns: repeat(8, 1fr);
+    max-width:400px;
+    margin:20px auto;
+    gap:5px;
 }
 
 .keyboard button {
-    width:40px;
     height:40px;
-    margin:4px;
 }
 
 .used {
@@ -117,8 +114,7 @@ button {
 .scoreboard {
     display:flex;
     justify-content:center;
-    gap:20px;
-    margin-top:20px;
+    gap:15px;
 }
 
 .player {
@@ -138,11 +134,11 @@ button {
 <!-- ENTRY -->
 <div id="entryScreen" class="screen active">
     <h1>Enter Puzzles</h1>
-    <input id="p1" placeholder="Round 1"><br>
-    <input id="p2" placeholder="Round 2"><br>
-    <input id="p3" placeholder="Round 3"><br>
-    <input id="p4" placeholder="Final"><br>
-    <button onclick="startGame()">Start Game</button>
+    <input id="p1"><br>
+    <input id="p2"><br>
+    <input id="p3"><br>
+    <input id="p4"><br>
+    <button onclick="startGame()">Start</button>
 </div>
 
 <!-- GAME -->
@@ -150,27 +146,22 @@ button {
 
 <div class="game">
 
-    <!-- LEFT -->
-    <div class="puzzle-box">
+    <!-- PUZZLE -->
+    <div class="puzzle-board">
         <div id="grid" class="grid"></div>
     </div>
 
     <!-- RIGHT -->
-    <div class="right">
+    <div>
+        <div class="wheel">🎡</div>
 
-        <div class="wheel" id="wheel">SPIN</div>
-
-        <div class="controls">
-            <button onclick="spinWheel()">Spin</button>
-            <button onclick="buyVowel()">Buy Vowel ₹10000</button><br>
-            <input id="solveInput" placeholder="Solve full puzzle">
-            <button onclick="solvePuzzle()">Solve</button>
-        </div>
+        <button onclick="spinWheel()">Spin</button>
+        <button onclick="buyVowel()">Buy Vowel ₹10000</button>
+        <button onclick="solvePuzzle()">Solve</button>
 
         <h2 id="wheelResult"></h2>
 
         <div class="scoreboard" id="scoreboard"></div>
-
     </div>
 
 </div>
@@ -184,7 +175,7 @@ button {
 let puzzles=[], currentRound=0;
 let players=[0,0,0];
 let currentPlayer=0;
-let revealed=[], currentPuzzle="";
+let currentPuzzle="", revealed=[];
 let spinValue=0;
 
 const wheelValues=[
@@ -212,9 +203,11 @@ function renderGrid(){
     currentPuzzle.split("").forEach((c,i)=>{
         let d=document.createElement("div");
         d.className="cell";
+
         if(c===" ") d.innerText="";
         else if(revealed[i]) d.innerText=c;
         else d.classList.add("hidden");
+
         grid.appendChild(d);
     });
 }
@@ -257,11 +250,6 @@ function guess(l,btn){
 
     renderGrid();
     updateScore();
-
-    if(!revealed.includes(false)){
-        alert("Solved!");
-        nextRound();
-    }
 }
 
 function buyVowel(){
@@ -279,17 +267,10 @@ function buyVowel(){
 }
 
 function solvePuzzle(){
-    let ans=solveInput.value.toUpperCase();
-
-    if(ans===currentPuzzle){
-        revealed=Array(currentPuzzle.length).fill(true);
-        renderGrid();
-        alert("Correct!");
-        nextRound();
-    } else {
-        alert("Wrong!");
-        nextPlayer();
-    }
+    revealed=Array(currentPuzzle.length).fill(true);
+    renderGrid();
+    alert("Solved!");
+    nextRound();
 }
 
 function nextPlayer(){
@@ -314,7 +295,6 @@ function nextRound(){
     }
 
     currentRound++;
-
     if(currentRound>=4){
         alert("Game Over");
         return;
