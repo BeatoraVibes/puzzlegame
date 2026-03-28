@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Wheel Game Premium</title>
+<title>Wheel Game Fixed</title>
 
 <style>
 body {
     margin:0;
     font-family: Arial;
-    background: radial-gradient(circle, #12002b, #000);
+    background: radial-gradient(circle, #1a0033, #000);
     color:white;
 }
 
@@ -24,25 +24,27 @@ body {
 .puzzle-board {
     background:#0b5d3b;
     padding:15px;
-    border-radius:12px;
-    box-shadow:0 0 25px gold;
+    border-radius:10px;
+    box-shadow:0 0 15px gold;
+    max-width:600px;
 }
 
 .grid {
     display:grid;
-    grid-template-columns: repeat(12, 40px);
+    grid-template-columns: repeat(12, 35px);
     gap:6px;
     justify-content:center;
 }
 
 .cell {
-    width:40px;
-    height:40px;
+    width:35px;
+    height:35px;
     display:flex;
     align-items:center;
     justify-content:center;
     font-size:18px;
     background:#083c28;
+    color:white;
 }
 
 .revealed {
@@ -50,24 +52,31 @@ body {
     color:black;
 }
 
+/* RIGHT PANEL */
+.right {
+    text-align:center;
+}
+
 /* WHEEL */
-.wheel-container {
-    position:relative;
-    width:220px;
-    height:220px;
-    margin:auto;
-}
-
-canvas {
+.wheel {
+    width:180px;
+    height:180px;
     border-radius:50%;
-}
-
-.pointer {
-    position:absolute;
-    top:-10px;
-    left:50%;
-    transform:translateX(-50%);
-    font-size:25px;
+    background: conic-gradient(
+        gold 0deg 45deg,
+        orange 45deg 90deg,
+        yellow 90deg 135deg,
+        red 135deg 180deg,
+        green 180deg 225deg,
+        cyan 225deg 270deg,
+        pink 270deg 315deg,
+        purple 315deg 360deg
+    );
+    margin:auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
 }
 
 /* BUTTONS */
@@ -100,6 +109,7 @@ button {
     display:flex;
     justify-content:center;
     gap:10px;
+    margin-top:10px;
 }
 
 .player {
@@ -124,14 +134,11 @@ button {
     </div>
 
     <!-- RIGHT -->
-    <div>
+    <div class="right">
 
-        <div class="wheel-container">
-            <div class="pointer">▲</div>
-            <canvas id="wheelCanvas" width="220" height="220"></canvas>
-        </div>
+        <div class="wheel">🎡</div>
 
-        <h3 id="wheelResult"></h3>
+        <div id="wheelResult"></div>
 
         <button onclick="spinWheel()">Spin</button>
         <button onclick="buyVowel()">Vowel ₹10000</button>
@@ -148,89 +155,16 @@ button {
 
 <script>
 
-/* DATA */
-let puzzles=["HELLO WORLD","INDIA IS GREAT","GAME DEVELOPMENT","FINAL ROUND"];
-let currentRound=0, currentPuzzle="", revealed=[];
-let players=[0,0,0], currentPlayer=0;
+let puzzles=["HELLO WORLD","INDIA IS GREAT","CODE GAME","FINAL ROUND"];
+let currentRound=0;
+let currentPuzzle="";
+let revealed=[];
+let players=[0,0,0];
+let currentPlayer=0;
 let spinValue=0;
 
-/* WHEEL */
-const segments=[
-    "10000","35000","50000","75000","100000","SNAKE","LOSE"
-];
+const wheelValues=[10000,35000,50000,75000,100000,"SNAKE","LOSE"];
 
-const colors=["gold","orange","yellow","red","green","cyan","purple"];
-
-let angle=0;
-
-/* DRAW WHEEL */
-const canvas=document.getElementById("wheelCanvas");
-const ctx=canvas.getContext("2d");
-
-function drawWheel(){
-    let arc=2*Math.PI/segments.length;
-
-    segments.forEach((seg,i)=>{
-        ctx.beginPath();
-        ctx.fillStyle=colors[i];
-        ctx.moveTo(110,110);
-        ctx.arc(110,110,100,arc*i+angle,arc*(i+1)+angle);
-        ctx.fill();
-
-        ctx.fillStyle="black";
-        ctx.font="12px Arial";
-        ctx.save();
-        ctx.translate(110,110);
-        ctx.rotate(arc*i+arc/2+angle);
-        ctx.fillText(seg,50,0);
-        ctx.restore();
-    });
-}
-
-/* SPIN */
-function spinWheel(){
-    let spin=Math.random()*2000+2000;
-    let start=angle;
-
-    let duration=2000;
-    let startTime=null;
-
-    function animate(t){
-        if(!startTime) startTime=t;
-        let progress=t-startTime;
-
-        let ease=1-Math.pow(1-progress/duration,3);
-        angle=start+(spin*ease*Math.PI/180);
-
-        ctx.clearRect(0,0,220,220);
-        drawWheel();
-
-        if(progress<duration){
-            requestAnimationFrame(animate);
-        } else {
-            calculateResult();
-        }
-    }
-
-    requestAnimationFrame(animate);
-}
-
-/* RESULT */
-function calculateResult(){
-    let deg=(angle*180/Math.PI)%360;
-    let segmentIndex=Math.floor((360-deg)/(360/segments.length))%segments.length;
-    let result=segments[segmentIndex];
-
-    wheelResult.innerText="Result: "+result;
-
-    if(result==="LOSE") nextPlayer();
-    else if(result==="SNAKE"){ players[currentPlayer]=0; nextPlayer(); }
-    else spinValue=parseInt(result);
-
-    updateScore();
-}
-
-/* GAME */
 function loadRound(){
     currentPuzzle=puzzles[currentRound];
     revealed=Array(currentPuzzle.length).fill(false);
@@ -241,14 +175,29 @@ function loadRound(){
 
 function renderGrid(){
     grid.innerHTML="";
+
+    let row=[];
     currentPuzzle.split("").forEach((c,i)=>{
+        row.push({char:c,index:i});
+
+        if(row.length===12){
+            drawRow(row);
+            row=[];
+        }
+    });
+
+    if(row.length>0) drawRow(row);
+}
+
+function drawRow(row){
+    row.forEach(item=>{
         let d=document.createElement("div");
         d.className="cell";
 
-        if(c===" ") d.innerText="";
-        else if(revealed[i]){
+        if(item.char===" ") d.innerText="";
+        else if(revealed[item.index]){
             d.classList.add("revealed");
-            d.innerText=c;
+            d.innerText=item.char;
         }
 
         grid.appendChild(d);
@@ -264,6 +213,17 @@ function renderKeyboard(){
         btn.onclick=()=>guess(l,btn);
         keyboard.appendChild(btn);
     }
+}
+
+function spinWheel(){
+    let val=wheelValues[Math.floor(Math.random()*wheelValues.length)];
+    wheelResult.innerText="Result: "+val;
+
+    if(val==="LOSE") nextPlayer();
+    else if(val==="SNAKE"){ players[currentPlayer]=0; nextPlayer(); }
+    else spinValue=val;
+
+    updateScore();
 }
 
 function guess(l,btn){
@@ -321,18 +281,19 @@ function updateScore(){
 
 function nextRound(){
     currentRound++;
+
     if(currentRound>=4){
         alert("Game Over");
         return;
     }
+
     loadRound();
 }
 
-/* INIT */
-drawWheel();
+/* START */
 loadRound();
 
 </script>
 
 </body>
-</html>
+    </html>
