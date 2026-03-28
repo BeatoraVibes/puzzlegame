@@ -2,151 +2,132 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Wheel Game Pro</title>
+<title>Wheel Game Pro+</title>
 
 <style>
 body {
     margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: radial-gradient(circle at center, #1a1a1a, #000);
+    font-family: Arial;
+    background: radial-gradient(circle, #1a0033, #000);
     color: white;
 }
 
 /* SCREENS */
-.screen {
-    display: none;
-    text-align: center;
-    padding: 20px;
+.screen { display:none; }
+.active { display:block; }
+
+/* ENTRY */
+#entryScreen {
+    text-align:center;
+    margin-top:100px;
 }
 
-.active {
-    display: block;
-}
-
-/* ENTRY SCREEN */
 input {
-    padding: 10px;
-    width: 300px;
-    margin: 5px;
-    border-radius: 5px;
-    border: none;
+    padding:10px;
+    margin:5px;
+    width:250px;
 }
 
-.start-btn {
-    padding: 12px 25px;
-    background: gold;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 10px;
+button {
+    cursor:pointer;
 }
 
-/* GAME UI */
-.header {
-    font-size: 28px;
-    margin-bottom: 10px;
+/* GAME LAYOUT */
+.game {
+    display:flex;
+    justify-content:space-between;
+    padding:20px;
 }
 
-/* SCOREBOARD */
-.scoreboard {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin: 15px;
+/* LEFT PUZZLE */
+.puzzle-box {
+    border:4px solid gold;
+    border-radius:15px;
+    padding:20px;
+    box-shadow:0 0 20px gold;
 }
 
-.player {
-    padding: 10px 20px;
-    background: #222;
-    border-radius: 10px;
-}
-
-.active-player {
-    border: 2px solid gold;
-}
-
-/* WHEEL */
-.wheel-box {
-    margin: 20px auto;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: conic-gradient(
-        gold 0deg 40deg,
-        red 40deg 80deg,
-        green 80deg 120deg,
-        blue 120deg 160deg,
-        orange 160deg 200deg,
-        purple 200deg 240deg,
-        pink 240deg 280deg,
-        cyan 280deg 320deg,
-        yellow 320deg 360deg
-    );
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-}
-
-.spin-btn {
-    margin-top: 10px;
-    padding: 10px 20px;
-    background: gold;
-    border: none;
-    cursor: pointer;
-}
-
-/* GRID */
 .grid {
-    display: grid;
+    display:grid;
     grid-template-columns: repeat(12, 45px);
-    gap: 8px;
-    justify-content: center;
-    margin: 20px;
+    gap:8px;
 }
 
 .cell {
-    width: 45px;
-    height: 45px;
-    background: #111;
-    border: 2px solid #444;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
+    width:45px;
+    height:45px;
+    background:#003333;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
 }
 
 .hidden {
-    background: #222;
+    background:#002222;
+}
+
+/* RIGHT PANEL */
+.right {
+    text-align:center;
+}
+
+/* WHEEL */
+.wheel {
+    width:220px;
+    height:220px;
+    border-radius:50%;
+    background: conic-gradient(
+        gold 0deg 60deg,
+        orange 60deg 120deg,
+        yellow 120deg 180deg,
+        red 180deg 240deg,
+        green 240deg 300deg,
+        cyan 300deg 360deg
+    );
+    margin:auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+}
+
+.controls button {
+    margin:5px;
+    padding:10px;
 }
 
 /* KEYBOARD */
 .keyboard {
-    max-width: 800px;
-    margin: auto;
+    margin-top:20px;
 }
 
 .keyboard button {
-    width: 40px;
-    height: 40px;
-    margin: 4px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
+    width:40px;
+    height:40px;
+    margin:4px;
 }
 
 .used {
-    background: grey !important;
-    pointer-events: none;
+    background:grey;
+    pointer-events:none;
 }
 
-/* ACTION BUTTONS */
-.actions button {
-    padding: 10px 15px;
-    margin: 10px;
-    background: gold;
-    border: none;
-    cursor: pointer;
+/* SCORE */
+.scoreboard {
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    margin-top:20px;
+}
+
+.player {
+    padding:10px 20px;
+    border:2px solid white;
+}
+
+.active-player {
+    border:2px solid gold;
 }
 
 </style>
@@ -154,150 +135,128 @@ input {
 
 <body>
 
-<!-- SCREEN 1 -->
+<!-- ENTRY -->
 <div id="entryScreen" class="screen active">
-    <h1>🎡 Setup Game</h1>
-    <input id="p1" placeholder="Round 1 Puzzle"><br>
-    <input id="p2" placeholder="Round 2 Puzzle"><br>
-    <input id="p3" placeholder="Round 3 Puzzle"><br>
-    <input id="p4" placeholder="Final Puzzle"><br>
-    <button class="start-btn" onclick="startGame()">Start Game</button>
+    <h1>Enter Puzzles</h1>
+    <input id="p1" placeholder="Round 1"><br>
+    <input id="p2" placeholder="Round 2"><br>
+    <input id="p3" placeholder="Round 3"><br>
+    <input id="p4" placeholder="Final"><br>
+    <button onclick="startGame()">Start Game</button>
 </div>
 
-<!-- SCREEN 2 -->
+<!-- GAME -->
 <div id="gameScreen" class="screen">
 
-    <div class="header" id="roundTitle"></div>
+<div class="game">
 
-    <div class="scoreboard" id="scoreboard"></div>
-
-    <div class="wheel-box" id="wheelDisplay">SPIN</div>
-    <button class="spin-btn" onclick="spinWheel()">Spin</button>
-
-    <h2 id="wheelResult"></h2>
-
-    <div class="grid" id="grid"></div>
-
-    <div class="keyboard" id="keyboard"></div>
-
-    <div class="actions">
-        <button onclick="buyVowel()">Buy Vowel (-₹100)</button>
-        <button onclick="nextRound()">Next Round</button>
+    <!-- LEFT -->
+    <div class="puzzle-box">
+        <div id="grid" class="grid"></div>
     </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+
+        <div class="wheel" id="wheel">SPIN</div>
+
+        <div class="controls">
+            <button onclick="spinWheel()">Spin</button>
+            <button onclick="buyVowel()">Buy Vowel ₹10000</button><br>
+            <input id="solveInput" placeholder="Solve full puzzle">
+            <button onclick="solvePuzzle()">Solve</button>
+        </div>
+
+        <h2 id="wheelResult"></h2>
+
+        <div class="scoreboard" id="scoreboard"></div>
+
+    </div>
+
+</div>
+
+<div class="keyboard" id="keyboard"></div>
 
 </div>
 
 <script>
 
-let puzzles = [];
-let currentRound = 0;
-let players = [0,0,0];
-let currentPlayer = 0;
-let currentPuzzle = "";
-let revealed = [];
+let puzzles=[], currentRound=0;
+let players=[0,0,0];
+let currentPlayer=0;
+let revealed=[], currentPuzzle="";
+let spinValue=0;
 
-const wheelValues = [
-    100,200,500,1000,2000,5000,10000,50000,100000,
+const wheelValues=[
+    10000,35000,50000,75000,100000,
     "SNAKE","LOSE"
 ];
 
 function startGame(){
-    puzzles = [
-        p1.value.toUpperCase(),
-        p2.value.toUpperCase(),
-        p3.value.toUpperCase(),
-        p4.value.toUpperCase()
-    ];
-
-    document.getElementById("entryScreen").classList.remove("active");
-    document.getElementById("gameScreen").classList.add("active");
-
+    puzzles=[p1.value.toUpperCase(),p2.value.toUpperCase(),p3.value.toUpperCase(),p4.value.toUpperCase()];
+    entryScreen.classList.remove("active");
+    gameScreen.classList.add("active");
     loadRound();
 }
 
 function loadRound(){
-    currentPuzzle = puzzles[currentRound];
-    revealed = Array(currentPuzzle.length).fill(false);
-
-    document.getElementById("roundTitle").innerText =
-        currentRound === 3 ? "FINAL ROUND" : "ROUND " + (currentRound+1);
-
+    currentPuzzle=puzzles[currentRound];
+    revealed=Array(currentPuzzle.length).fill(false);
     renderGrid();
     renderKeyboard();
-    updateScores();
+    updateScore();
 }
 
 function renderGrid(){
-    grid.innerHTML = "";
-
+    grid.innerHTML="";
     currentPuzzle.split("").forEach((c,i)=>{
-        let d = document.createElement("div");
-        d.className = "cell";
-
-        if(c === " ") {
-            d.innerText = "";
-        }
-        else if(revealed[i]) {
-            d.innerText = c;
-        }
-        else {
-            d.classList.add("hidden");
-        }
-
+        let d=document.createElement("div");
+        d.className="cell";
+        if(c===" ") d.innerText="";
+        else if(revealed[i]) d.innerText=c;
+        else d.classList.add("hidden");
         grid.appendChild(d);
     });
 }
 
 function renderKeyboard(){
-    keyboard.innerHTML = "";
-
+    keyboard.innerHTML="";
     for(let i=65;i<=90;i++){
-        let l = String.fromCharCode(i);
-
-        let btn = document.createElement("button");
-        btn.innerText = l;
-
-        btn.onclick = ()=>guess(l, btn);
-
+        let l=String.fromCharCode(i);
+        let btn=document.createElement("button");
+        btn.innerText=l;
+        btn.onclick=()=>guess(l,btn);
         keyboard.appendChild(btn);
     }
 }
 
 function spinWheel(){
-    let val = wheelValues[Math.floor(Math.random()*wheelValues.length)];
-    wheelResult.innerText = val;
+    let val=wheelValues[Math.floor(Math.random()*wheelValues.length)];
+    wheelResult.innerText=val;
 
-    if(val === "LOSE"){
-        nextPlayer();
-    }
-    else if(val === "SNAKE"){
-        players[currentPlayer] = 0;
-        nextPlayer();
-    }
-    else{
-        window.spin = val;
-    }
+    if(val==="LOSE") nextPlayer();
+    else if(val==="SNAKE"){ players[currentPlayer]=0; nextPlayer(); }
+    else spinValue=val;
 
-    updateScores();
+    updateScore();
 }
 
-function guess(letter, btn){
+function guess(l,btn){
     btn.classList.add("used");
-
-    let found = false;
+    let found=false;
 
     currentPuzzle.split("").forEach((c,i)=>{
-        if(c === letter){
-            revealed[i] = true;
-            players[currentPlayer] += window.spin || 0;
-            found = true;
+        if(c===l){
+            revealed[i]=true;
+            players[currentPlayer]+=spinValue;
+            found=true;
         }
     });
 
     if(!found) nextPlayer();
 
     renderGrid();
-    updateScores();
+    updateScore();
 
     if(!revealed.includes(false)){
         alert("Solved!");
@@ -306,47 +265,58 @@ function guess(letter, btn){
 }
 
 function buyVowel(){
-    let v = prompt("Enter vowel").toUpperCase();
+    let v=prompt("Enter vowel").toUpperCase();
     if(!"AEIOU".includes(v)) return;
 
-    players[currentPlayer] -= 100;
+    players[currentPlayer]-=10000;
 
     currentPuzzle.split("").forEach((c,i)=>{
-        if(c === v) revealed[i] = true;
+        if(c===v) revealed[i]=true;
     });
 
     renderGrid();
-    updateScores();
+    updateScore();
+}
+
+function solvePuzzle(){
+    let ans=solveInput.value.toUpperCase();
+
+    if(ans===currentPuzzle){
+        revealed=Array(currentPuzzle.length).fill(true);
+        renderGrid();
+        alert("Correct!");
+        nextRound();
+    } else {
+        alert("Wrong!");
+        nextPlayer();
+    }
 }
 
 function nextPlayer(){
-    currentPlayer = (currentPlayer+1)%3;
+    currentPlayer=(currentPlayer+1)%3;
 }
 
-function updateScores(){
-    scoreboard.innerHTML = "";
-
+function updateScore(){
+    scoreboard.innerHTML="";
     players.forEach((p,i)=>{
-        let div = document.createElement("div");
-        div.className = "player";
-        if(i === currentPlayer) div.classList.add("active-player");
-
-        div.innerText = `P${i+1}: ₹${p}`;
-        scoreboard.appendChild(div);
+        let d=document.createElement("div");
+        d.className="player";
+        if(i===currentPlayer) d.classList.add("active-player");
+        d.innerText=`P${i+1}: ₹${p}`;
+        scoreboard.appendChild(d);
     });
 }
 
 function nextRound(){
-
-    if(currentRound === 2){
-        let max = Math.max(...players);
-        currentPlayer = players.indexOf(max);
+    if(currentRound===2){
+        let max=Math.max(...players);
+        currentPlayer=players.indexOf(max);
     }
 
     currentRound++;
 
-    if(currentRound >= 4){
-        alert("Game Over!");
+    if(currentRound>=4){
+        alert("Game Over");
         return;
     }
 
