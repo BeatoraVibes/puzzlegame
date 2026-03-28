@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Wheel Game Final</title>
+<title>Wheel Game</title>
 
 <style>
 body{
@@ -14,7 +14,7 @@ body{
 
 /* SCREENS */
 .screen{display:none;}
-.active{display:block;}
+.screen.active{display:block;}
 
 /* ENTRY */
 #entry{
@@ -22,17 +22,16 @@ body{
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    padding:20px;
+    min-height:100vh;
 }
-
 #entry input,#entry select{
-    width:280px;
+    width:260px;
     padding:10px;
     margin:5px;
     text-align:center;
 }
 
-/* GAME */
+/* GAME LAYOUT */
 .game{
     display:flex;
     flex-wrap:wrap;
@@ -47,97 +46,49 @@ body{
     padding:15px;
     border-radius:15px;
     box-shadow:0 0 20px gold;
-    max-width:95%;
 }
-
-.grid{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-}
-
-.row{
-    display:flex;
-    justify-content:center;
-}
-
+.grid{display:flex;flex-direction:column;align-items:center;}
+.row{display:flex;}
 .cell{
-    width:35px;
-    height:35px;
-    margin:2px;
+    width:35px;height:35px;margin:2px;
     background:#083c28;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    display:flex;align-items:center;justify-content:center;
 }
+.revealed{background:white;color:black;}
 
-.revealed{
-    background:white;
-    color:black;
-}
-
-/* RIGHT PANEL */
-.right{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:8px;
-}
+/* RIGHT */
+.right{display:flex;flex-direction:column;align-items:center;gap:8px;}
 
 /* WHEEL */
-.wheel{
-    width:180px;
-    height:180px;
-    border-radius:50%;
-    background: conic-gradient(
-        gold,orange,yellow,red,green,cyan,purple,gold
-    );
-    box-shadow:0 0 15px gold;
+.wheel-container{
+    position:relative;
+    width:200px;height:200px;
+}
+canvas{border-radius:50%;}
+.pointer{
+    position:absolute;
+    top:-10px;left:50%;
+    transform:translateX(-50%);
+    font-size:20px;
 }
 
 /* BUTTONS */
-.controls{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:5px;
-}
-
-button{
-    padding:8px 12px;
-    cursor:pointer;
-}
+.controls{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;}
+button{padding:8px 12px;cursor:pointer;}
 
 /* KEYBOARD */
 .keyboard{
     display:grid;
     grid-template-columns: repeat(8, 45px);
     justify-content:center;
-    gap:5px;
-    margin-top:10px;
+    gap:5px;margin-top:10px;
 }
-
-.keyboard button{
-    height:40px;
-}
+.keyboard button{height:40px;}
 
 /* SCORE */
-.scoreboard{
-    display:flex;
-    gap:5px;
-    flex-wrap:wrap;
-    justify-content:center;
-}
-
-.player{
-    padding:5px;
-    border:2px solid white;
-}
-
-.active-player{
-    border:2px solid gold;
-    box-shadow:0 0 10px gold;
-}
+.scoreboard{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;}
+.player{padding:5px;border:2px solid white;}
+.active-player{border:2px solid gold;box-shadow:0 0 10px gold;}
 
 </style>
 </head>
@@ -146,12 +97,11 @@ button{
 
 <!-- ENTRY -->
 <div id="entry" class="screen active">
-
 <h3>Select Players</h3>
 <select id="playerCount">
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3" selected>3</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3" selected>3</option>
 </select>
 
 <h3>Player Names</h3>
@@ -166,30 +116,31 @@ button{
 <input id="p4">
 
 <button onclick="startGame()">Start Game</button>
-
 </div>
 
 <!-- GAME -->
 <div id="game" class="screen">
-
 <div class="game">
 
 <div class="board">
-    <div id="grid" class="grid"></div>
+<div id="grid" class="grid"></div>
 </div>
 
 <div class="right">
 
-<div class="wheel"></div>
+<div class="wheel-container">
+<div class="pointer">▲</div>
+<canvas id="wheel" width="200" height="200"></canvas>
+</div>
 
 <h3 id="result"></h3>
 
 <div class="controls">
-    <button onclick="spin()">Spin</button>
-    <button onclick="buyVowel()">Vowel ₹10000</button>
-    <button onclick="solve()">Solve</button>
-    <button onclick="nextRound()">Next</button>
-    <button onclick="restartGame()">Restart</button>
+<button onclick="spin()">Spin</button>
+<button onclick="buyVowel()">Vowel ₹10000</button>
+<button onclick="solve()">Solve</button>
+<button onclick="nextRound()">Next</button>
+<button onclick="restart()">Restart</button>
 </div>
 
 <div id="scoreboard" class="scoreboard"></div>
@@ -199,107 +150,128 @@ button{
 </div>
 
 <div id="keyboard" class="keyboard"></div>
-
 </div>
 
 <script>
 
+/* DATA */
 let puzzles=[],currentRound=0;
 let currentPuzzle="",revealed=[];
 let players=[],playerNames=[];
 let currentPlayer=0,totalPlayers=3;
 let spinValue=0;
 
-const values=[10000,35000,50000,75000,100000,"SNAKE","LOSE"];
+/* WHEEL */
+const segments=["10000","35000","50000","75000","100000","SNAKE","LOSE"];
+const colors=["gold","orange","yellow","red","green","cyan","purple"];
+let angle=0;
 
-/* PLAYER INPUT FIX */
-playerCount.addEventListener("change",()=>{
-    let c=parseInt(playerCount.value);
-    n2.style.display=c>=2?"block":"none";
-    n3.style.display=c===3?"block":"none";
-});
+const canvas=document.getElementById("wheel");
+const ctx=canvas.getContext("2d");
+
+function drawWheel(){
+    let arc=2*Math.PI/segments.length;
+    segments.forEach((seg,i)=>{
+        ctx.beginPath();
+        ctx.fillStyle=colors[i];
+        ctx.moveTo(100,100);
+        ctx.arc(100,100,90,arc*i+angle,arc*(i+1)+angle);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(100,100);
+        ctx.rotate(arc*i+arc/2+angle);
+        ctx.fillStyle="black";
+        ctx.font="12px Arial";
+        ctx.fillText(seg,40,0);
+        ctx.restore();
+    });
+}
+
+/* SPIN */
+function spin(){
+    let spin=Math.random()*2000+2000;
+    let start=angle;
+    let duration=2000;
+    let startTime=null;
+
+    function animate(t){
+        if(!startTime) startTime=t;
+        let progress=t-startTime;
+        let ease=1-Math.pow(1-progress/duration,3);
+
+        angle=start+(spin*ease*Math.PI/180);
+        ctx.clearRect(0,0,200,200);
+        drawWheel();
+
+        if(progress<duration) requestAnimationFrame(animate);
+        else getResult();
+    }
+    requestAnimationFrame(animate);
+}
+
+/* RESULT */
+function getResult(){
+    let deg=(angle*180/Math.PI)%360;
+    let index=Math.floor((360-deg)/(360/segments.length))%segments.length;
+    let res=segments[index];
+
+    result.innerText="Result: "+res;
+
+    if(res==="LOSE") nextPlayer();
+    else if(res==="SNAKE"){players[currentPlayer]=0;nextPlayer();}
+    else spinValue=parseInt(res);
+
+    updateScore();
+}
 
 /* START */
 function startGame(){
-
     totalPlayers=parseInt(playerCount.value);
 
     playerNames=[
-        n1.value || "Player 1",
-        n2.value || "Player 2",
-        n3.value || "Player 3"
+        n1.value||"Player 1",
+        n2.value||"Player 2",
+        n3.value||"Player 3"
     ].slice(0,totalPlayers);
 
     players=new Array(totalPlayers).fill(0);
-    currentPlayer=0;
 
-    puzzles=[
-        p1.value.toUpperCase(),
-        p2.value.toUpperCase(),
-        p3.value.toUpperCase(),
-        p4.value.toUpperCase()
-    ];
+    puzzles=[p1.value,p2.value,p3.value,p4.value].map(p=>p.toUpperCase());
 
     entry.classList.remove("active");
     game.classList.add("active");
 
+    drawWheel();
     loadRound();
-}
-
-/* LOAD */
-function loadRound(){
-    currentPuzzle=puzzles[currentRound];
-    revealed=Array(currentPuzzle.length).fill(false);
-    renderGrid();
-    renderKeyboard();
-    updateScore();
 }
 
 /* GRID */
 function renderGrid(){
     grid.innerHTML="";
-
     let words=currentPuzzle.split(" ");
     let row="";
-
-    words.forEach(word=>{
-        if((row+word).length<=12){
-            row+=(row?" ":"")+word;
-        }else{
-            drawRow(row);
-            row=word;
-        }
+    words.forEach(w=>{
+        if((row+w).length<=12) row+=(row?" ":"")+w;
+        else{drawRow(row);row=w;}
     });
-
     if(row) drawRow(row);
 }
-
 function drawRow(text){
-    let rowDiv=document.createElement("div");
-    rowDiv.className="row";
-
-    let startIndex=0;
-
-    text.split("").forEach((char)=>{
+    let r=document.createElement("div");r.className="row";
+    let start=0;
+    text.split("").forEach(c=>{
         let cell=document.createElement("div");
         cell.className="cell";
-
-        if(char===" "){
-            cell.style.visibility="hidden";
-        } else {
-            let index=currentPuzzle.indexOf(char,startIndex);
-            startIndex=index+1;
-
-            if(revealed[index]){
-                cell.classList.add("revealed");
-                cell.innerText=char;
-            }
+        if(c===" ") cell.style.visibility="hidden";
+        else{
+            let i=currentPuzzle.indexOf(c,start);
+            start=i+1;
+            if(revealed[i]){cell.classList.add("revealed");cell.innerText=c;}
         }
-
-        rowDiv.appendChild(cell);
+        r.appendChild(cell);
     });
-
-    grid.appendChild(rowDiv);
+    grid.appendChild(r);
 }
 
 /* KEYBOARD */
@@ -307,96 +279,61 @@ function renderKeyboard(){
     keyboard.innerHTML="";
     for(let i=65;i<=90;i++){
         let l=String.fromCharCode(i);
-        let btn=document.createElement("button");
-        btn.innerText=l;
-        btn.onclick=()=>guess(l,btn);
-        keyboard.appendChild(btn);
+        let b=document.createElement("button");
+        b.innerText=l;
+        b.onclick=()=>guess(l,b);
+        keyboard.appendChild(b);
     }
 }
 
-/* GUESS */
-function guess(l,btn){
-    btn.disabled=true;
+/* GAME LOGIC */
+function guess(l,b){
+    b.disabled=true;
     let found=false;
-
     currentPuzzle.split("").forEach((c,i)=>{
-        if(c===l){
-            revealed[i]=true;
-            players[currentPlayer]+=spinValue;
-            found=true;
-        }
+        if(c===l){revealed[i]=true;players[currentPlayer]+=spinValue;found=true;}
     });
-
     if(!found) nextPlayer();
-
-    renderGrid();
-    updateScore();
+    renderGrid();updateScore();
 }
-
-/* WHEEL */
-function spin(){
-    let val=values[Math.floor(Math.random()*values.length)];
-    result.innerText="Result: "+val;
-
-    if(val==="LOSE") nextPlayer();
-    else if(val==="SNAKE"){ players[currentPlayer]=0; nextPlayer(); }
-    else spinValue=val;
-
-    updateScore();
-}
-
-/* VOWEL */
 function buyVowel(){
     let v=prompt("Enter vowel").toUpperCase();
     if(!"AEIOU".includes(v)) return;
-
     players[currentPlayer]-=10000;
-
-    currentPuzzle.split("").forEach((c,i)=>{
-        if(c===v) revealed[i]=true;
-    });
-
-    renderGrid();
-    updateScore();
+    currentPuzzle.split("").forEach((c,i)=>{if(c===v) revealed[i]=true;});
+    renderGrid();updateScore();
 }
+function solve(){revealed.fill(true);renderGrid();}
 
-/* SOLVE */
-function solve(){
-    revealed=Array(currentPuzzle.length).fill(true);
-    renderGrid();
-}
+function nextPlayer(){currentPlayer=(currentPlayer+1)%totalPlayers;}
 
-/* PLAYER */
-function nextPlayer(){
-    currentPlayer=(currentPlayer+1)%totalPlayers;
-}
-
-/* SCORE */
 function updateScore(){
     scoreboard.innerHTML="";
     for(let i=0;i<totalPlayers;i++){
         let d=document.createElement("div");
         d.className="player";
         if(i===currentPlayer) d.classList.add("active-player");
-
-        d.innerHTML=`<strong>${playerNames[i]}</strong><br>₹${players[i]}`;
+        d.innerHTML=`<b>${playerNames[i]}</b><br>₹${players[i]}`;
         scoreboard.appendChild(d);
     }
 }
 
-/* ROUND */
+function loadRound(){
+    currentPuzzle=puzzles[currentRound];
+    revealed=new Array(currentPuzzle.length).fill(false);
+    renderGrid();renderKeyboard();updateScore();
+}
+
 function nextRound(){
     currentRound++;
-    if(currentRound>=4){
-        alert("Game Over");
-        return;
-    }
+    if(currentRound>=4){alert("Game Over");return;}
     loadRound();
 }
 
-/* RESTART */
-function restartGame(){
-    location.reload();
+/* RESTART (back to entry) */
+function restart(){
+    game.classList.remove("active");
+    entry.classList.add("active");
 }
 
 </script>
